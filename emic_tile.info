@@ -1,0 +1,7 @@
+; $Id$
+name = Emic Tile Implementation
+description = Adds access to TILE annotation tool
+dependencies[] = fedora_repository
+dependencies[] = islandora_book
+package = Emic Tools
+core = 6.x

@@ -1,0 +1,93 @@
+<?php
+
+function emic_tile_menu() {
+  $items = array();
+  $items['load/tile'] = array(
+    'file' => 'emic_tile.inc',
+    'page callback' => 'emic_load_tile',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('use TILE'),
+  );
+
+    $items['save/tile'] = array(
+    'file' => 'emic_tile.inc',
+    'page callback' => 'emic_save_tile_data',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('use TILE'),
+  );
+
+  return $items;
+}
+
+function emic_tile_perm() {
+  return array(
+    'use TILE',
+    'Create TILE',
+  );
+}
+
+function emic_tile_form_book_management_form_alter(&$form, &$form_state) {
+  if (user_access('Create TILE')) {
+    module_load_include('inc', 'emic_tile', 'emic_tile');
+    $form['page_manage']['create_tile_json'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Create data for TILE reader'),
+      '#weight' => -10,
+    );
+    $form['#submit'][] = 'create_emic_tile';
+    $form['#submit'] = array_reverse($form['#submit']);
+  }
+}
+
+function emic_tile_form_islandora_book_admin_settings_alter(&$form, &$form_state) {
+
+  $tile_path = isset($form_state['values']['islandora_tile_path']) ? $form_state['values']['islandora_tile_path'] : variable_get('islandora_tile_path', 'http://localhost/Tile');
+  $tile_avail = tile_available($tile_path);
+  $confirmation_message = ($tile_avail ? '<img src="' . url('misc/watchdog-ok.png') . '"/>'
+          . t('Tile url is valid.') : '<img src="'
+          . url('misc/watchdog-error.png') . '"/> '
+          . t('Unable to locate Tile installtion at !tile_path</p>', array('!tile_path' => $tile_path)));
+
+  $form['book_ahah_wrapper']['islandora_tile_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Path to TILE'),
+    '#description' => t('Path to TILE installation'),
+    '#default_value' => $tile_path,
+    '#ahah' => array(
+      'path' => 'islandora/book/ocr',
+      'wrapper' => 'ibook-url',
+      'effect' => 'fade',
+      'event' => 'change'),
+  );
+
+  $form['book_ahah_wrapper']['infobox2'] = array(
+    '#type' => 'item',
+    '#value' => $confirmation_message,
+  );
+}
+
+function tile_available($tile_url) {
+  $handle = curl_init($tile_url);
+  curl_setopt($handle, CURLOPT_RETURNTRANSFER, TRUE);
+  $response = curl_exec($handle);
+  $httpCode = curl_getinfo($handle, CURLINFO_HTTP_CODE);
+  $retval = TRUE;
+  if ($httpCode % 100 == 4) {
+    $retval = FALSE;
+  }
+  curl_close($handle);
+  return $retval;
+}
+
+function emic_tile_islandora_book_links($pid){
+  $tile_host = variable_get('islandora_tile_path', 'http://localhost/Tile');
+  $fedora_url = variable_get('fedora_base_url', 'http://localhost:8080/fedora');
+  $options = array(
+           'attributes' => array('target' => '_blank'),
+           'query' => array(
+                'file' => "$fedora_url/objects/$pid/datastreams/TILE_JSON/content",
+            ),
+          );
+  $link = l('TILE image annotation', "$tile_host", $options);
+  return $link;
+}
