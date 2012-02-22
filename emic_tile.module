@@ -9,12 +9,19 @@ function emic_tile_menu() {
     'access arguments' => array('use TILE'),
   );
 
-    $items['save/tile'] = array(
+  $items['save/tile'] = array(
     'file' => 'emic_tile.inc',
     'page callback' => 'emic_save_tile_data',
     'type' => MENU_CALLBACK,
     'access arguments' => array('use TILE'),
   );
+  $items['emic/getTILE'] = array(
+    'file' => 'tile_callbacks.inc',
+    'page callback' => 'load_emic_tile_data',
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('use TILE'),
+  );
+
 
   return $items;
 }
@@ -79,15 +86,27 @@ function tile_available($tile_url) {
   return $retval;
 }
 
-function emic_tile_islandora_book_links($pid){
-  $tile_host = variable_get('islandora_tile_path', 'http://localhost/Tile');
+function emic_tile_islandora_book_links($pid) {
+  $tile_host = variable_get('islandora_tile_path', 'http://localhost/Tile/index.php');
   $fedora_url = variable_get('fedora_base_url', 'http://localhost:8080/fedora');
+  $form_string = "
+     <form method='post' action='$tile_host' target='_blank'>
+     <input type='hidden' name='PID' value='$pid'>
+     <input type='submit' value='Tile Image Annotation'>
+     </form>";
+
+
   $options = array(
-           'attributes' => array('target' => '_blank'),
-           'query' => array(
-                'file' => "$fedora_url/objects/$pid/datastreams/TILE_JSON/content",
-            ),
-          );
+    'attributes' => array('target' => '_blank'),
+    'query' => array(
+      'PID' => $pid,
+    ),
+  );
   $link = l('TILE image annotation', "$tile_host", $options);
   return $link;
 }
+
+/**
+ * <a href="$tile_host"
+  onClick="document.forms['myform'].submit(); return false;">TILE image annotation</a>
+ */

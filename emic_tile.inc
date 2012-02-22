@@ -3,7 +3,7 @@
 function emic_load_tile($pid) {
   global $user;
   $path = drupal_get_path('module', 'emic_tile');
-  
+
   drupal_add_css($path . '/css/tile.css');
   drupal_add_js($path . '/js/tile.js');
   $emicUser = $user->name;
@@ -81,9 +81,22 @@ function create_emic_tile($form_id, $form_values) {
   }
 }
 
+function emic_save_tile_data() {
+  global $base_url;
+  module_load_include("inc", "fedora_repository", "api/fedora_item");
+  $json = $_POST['text'];
+  $json = addslashes($json);
+  $book_pid = preg_replace('/%3A/', ':', $_POST['file_pid']);
+  $flat_pid = str_replace(':', '_', $book_pid);
+  $tile_file = file_directory_path() . "/tile/$flat_pid";
+  if (!is_dir(file_directory_path() . "/tile")) {
+    mkdir(file_directory_path() . "/tile");
+  }
+  file_put_contents($tile_file, $json);
+  $book_item = new fedora_item($book_pid);
+  $file_url = "$base_url/$tile_file";
+  $book_item->add_or_modify_by_reference($file_url, 'TILE_JSON', "Tile Data", 'text/plain', FALSE, 'Modified by Islandora API');
+  file_delete($tile_file);
 
-function emic_save_tile_data(){
-  $meaningless = "Some random statement";
-  drupal_set_message($meaningless);
   return;
 }
